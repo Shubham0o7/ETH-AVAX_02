@@ -1,4 +1,4 @@
-# Hardhat Project
+# Front-End Project
 Simple Ethereum Contract Application
 
 ## Description
@@ -11,20 +11,21 @@ This project is a simple Ethereum contract application that allows users to inte
 
 1. Clone the repository to your local machine.
 
-shell
+```
 git clone <repository_url>
-
+```
 
 2. Navigate to the project directory.
 
-shell
+```
 cd <project_directory>
-
+```
 
 3. Install the project dependencies.
 
-shell
+```
 npm install
+```
 
 
 ### Executing program
@@ -33,20 +34,22 @@ npm install
 
 2. In the second terminal, start the local Hardhat network.
 
-shell
+```
 npx hardhat node
+```
 
 
 3. In the third terminal, deploy the contract on the local network.
 
-shell
+```
 npx hardhat run --network localhost scripts/deploy.js
-
+```
 
 4. Back in the first terminal, start the frontend application.
 
-shell
+```
 npm run dev
+```
 
 
 5. Open your web browser and navigate to `http://localhost:3000` to access the application.
