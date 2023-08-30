@@ -1,60 +1,70 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-//import "hardhat/console.sol";
-
 contract Assessment {
-    address payable public owner;
+    address[] public owners;
     uint256 public balance;
+    bool public paused;
 
-    event Deposit(uint256 amount);
-    event Withdraw(uint256 amount);
+    event Deposit(address indexed depositor, uint256 amount);
+    event Withdraw(address indexed withdrawer, uint256 amount);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event PausedStatusChanged(bool indexed paused);
 
-    constructor(uint initBalance) payable {
-        owner = payable(msg.sender);
-        balance = initBalance;
+    modifier onlyOwner() {
+        bool isOwner = false;
+        for (uint256 i = 0; i < owners.length; i++) {
+            if (msg.sender == owners[i]) {
+                isOwner = true;
+                break;
+            }
+        }
+        require(isOwner, "You are not an owner of this account");
+        _;
     }
 
-    function getBalance() public view returns(uint256){
+    modifier whenNotPaused() {
+        require(!paused, "Contract is paused");
+        _;
+    }
+
+    constructor(address[] memory _initialOwners, uint256 initialBalance) payable {
+        require(_initialOwners.length > 0, "At least one owner is required");
+        owners = _initialOwners;
+        balance = initialBalance;
+    }
+
+    function getBalance() external view returns (uint256) {
         return balance;
     }
 
-    function deposit(uint256 _amount) public payable {
-        uint _previousBalance = balance;
+    function deposit() external payable whenNotPaused {
+        require(msg.value > 0, "Amount must be greater than 0");
 
-        // make sure this is the owner
-        require(msg.sender == owner, "You are not the owner of this account");
+        balance += msg.value;
 
-        // perform transaction
-        balance += _amount;
-
-        // assert transaction completed successfully
-        assert(balance == _previousBalance + _amount);
-
-        // emit the event
-        emit Deposit(_amount);
+        emit Deposit(msg.sender, msg.value);
     }
 
-    // custom error
-    error InsufficientBalance(uint256 balance, uint256 withdrawAmount);
+    function withdraw(uint256 _withdrawAmount) external onlyOwner whenNotPaused {
+        require(balance >= _withdrawAmount, "Insufficient balance");
 
-    function withdraw(uint256 _withdrawAmount) public {
-        require(msg.sender == owner, "You are not the owner of this account");
-        uint _previousBalance = balance;
-        if (balance < _withdrawAmount) {
-            revert InsufficientBalance({
-                balance: balance,
-                withdrawAmount: _withdrawAmount
-            });
-        }
-
-        // withdraw the given amount
         balance -= _withdrawAmount;
+        payable(msg.sender).transfer(_withdrawAmount);
 
-        // assert the balance is correct
-        assert(balance == (_previousBalance - _withdrawAmount));
+        emit Withdraw(msg.sender, _withdrawAmount);
+    }
 
-        // emit the event
-        emit Withdraw(_withdrawAmount);
+    function transferOwnership(address[] calldata _newOwners) external onlyOwner {
+        require(_newOwners.length > 0, "At least one new owner is required");
+        owners = _newOwners;
+
+        emit OwnershipTransferred(msg.sender, _newOwners[0]);
+    }
+
+    function togglePaused() external onlyOwner {
+        paused = !paused;
+
+        emit PausedStatusChanged(paused);
     }
 }
